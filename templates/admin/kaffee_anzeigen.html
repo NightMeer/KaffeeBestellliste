@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="{{HTML_LANG}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{html_title}}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
+    <link rel="shortcut icon" href="{{ url_for('static', filename='/favicon/favicon.ico') }}">
+    <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</head>
+<body>
+    {{ navbar | safe }}
+
+    <h1>Admin Kaffee Anzeigen</h1>
+    <table>
+        <tr>
+            <th>Hersteller</th>
+            <th>Name</th>
+            <th>Herkunft</th>
+            <th>Anbauart</th>
+            <th>Besonderheit</th>
+            <th>Geschmacksprofil</th>
+            <th>Preis_1000g</th>
+            <th>Preis_500g</th>
+            <th>Preis_250g</th>
+            <th>Preis_100g</th>
+            <th>Ändern</th>
+        </tr>
+        {%for row in result%}
+        <tr>
+            <td> {{ row[1] }} </td>
+            <td> {{ row[2] }} </td>
+            <td> {{ row[3] }} </td>
+            <td> {{ row[4] }} </td>
+            <td> {{ row[5] }} </td>
+            <td> {{ row[6] }} </td>
+            <td>
+            {% if row[7] %}
+            {{ "%.2f"|format(row[7] | float) }}€
+            {% endif %}
+            </td>
+            <td>
+            {% if row[8] %}
+            {{ "%.2f"|format(row[8] | float) }}€
+            {% endif %}
+            </td>
+            <td>
+            {% if row[9] %}
+            {{ "%.2f"|format(row[9] | float) }}€
+            {% endif %}
+            </td>
+            <td>
+            {% if row[10] %}
+            {{ "%.2f"|format(row[10] | float) }}€
+            {% endif %}
+            </td>
+            <td>
+                <a href="/admin/kaffee/aendern/{{row[0]}}"> Ändern </a>
+            </td>
+        </tr>
+        {%endfor%}
+    </table>
+</form>
+</body>
+</html>

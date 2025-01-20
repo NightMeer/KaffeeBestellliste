@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="{{HTML_LANG}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{html_title}}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
+    <link rel="shortcut icon" href="{{ url_for('static', filename='/favicon/favicon.ico') }}">
+    <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</head>
+<body>
+    {{ navbar | safe }}
+
+    <h1>Admin Kaffee Import</h1>
+
+    {{ fehler }}
+    <br></br>Template:
+    <p>
+        Hersteller;Name;Herkunft;Anbauart;Besonderheit;Geschmacksprofil;Preis_1000g;Preis_500g;Preis_250g;Preis_100g
+    </p>
+
+    <form method="post" action="/admin/kaffee/import/txt" id="import">
+
+        <textarea id="importtext" name="importtext" rows="5" cols="33"></textarea> <br>
+
+
+    <button type="submit" form="import" id="submit" >Speichern</button>
+</form>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="{{HTML_LANG}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{html_title}}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
+    <link rel="shortcut icon" href="{{ url_for('static', filename='/favicon/favicon.ico') }}">
+    <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</head>
+<body>
+    {{ navbar | safe }}
+
+    <h1>Admin Benutzer hinzufügen</h1>
+
+    {{ fehler }}
+
+    <form method="post" action="/admin/benutzer/aendern/{{id}}" id="install">
+    <label for="vorname">Vorname:</label><br>
+    <input value="{{result[0]}}" type="text" id="vorname" name="vorname"><br>
+
+    <label for="nachname">Nachname:</label><br>
+    <input value="{{result[1]}}" type="text" id="nachname" name="nachname"><br>
+
+    <label for="email">Email:</label><br>
+    <input value="{{result[2]}}" type="text" id="email" name="email"><br>
+
+    <label for="passwort">Passwort:</label><br>
+    <input type="text" id="passwort" name="passwort"><br>
+
+    <label for="passwort2">Passwort Wiederholen:</label><br>
+    <input type="text" id="passwort2" name="passwort2"><br>
+
+    <label for="adresse">Adresse:</label><br>
+    <input value="{{result[3]}}" type="text" id="adresse" name="adresse"><br>
+
+    <label for="admin">Admin:</label><br>
+    <input value="{{result[4]}}" type="text" id="admin" name="admin"><br><br>
+
+    <button type="submit" form="install" id="submit" >Speichern</button>
+    </form>
+
+<form method="post" action="/admin/benutzer/loeschen/{{id}}" id="loeschen">
+    <button type="submit" form="loeschen" id="delete" >Löschen</button>
+</form>
+</body>
+</html>

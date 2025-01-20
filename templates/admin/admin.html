@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="{{HTML_LANG}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{html_title}}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
+    <link rel="shortcut icon" href="{{ url_for('static', filename='/favicon/favicon.ico') }}">
+    <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</head>
+<body>
+    {{ navbar | safe }}
+    <h1>Admin</h1>
+
+    <a href="admin/benutzer/hinzufuegen"> Benutzer hinzufügen </a> <br>
+    <a href="admin/benutzer/anzeigen"> Benutzer Anzeigen </a> <br>
+
+    <a href="admin/kaffee/hinzufuegen"> Kaffee hinzufügen </a> <br>
+    <a href="admin/kaffee/anzeigen"> Kaffee Anzeigen </a> <br><br>
+
+    <a href="/admin/delete"> Admin Delete </a> <br>
+    <a href="/admin/fill"> Admin Fill </a> <br>
+    <a href="/admin/benutzer/fill"> Admin Benutzer fill </a> <br>
+    <a href="/admin/kaffee/fill"> Admin Kaffee fill</a> <br><br>
+
+    <a href="/admin/kaffee/import/txt"> Admin Kaffee Import</a> <br>
+    <a href="/admin/kaffee/delete"> Admin Kaffee Delete</a> <br>
+
+
+
+
+</body>
+</html>

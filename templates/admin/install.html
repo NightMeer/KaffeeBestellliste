@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="{{HTML_LANG}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{html_title}}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
+    <link rel="shortcut icon" href="{{ url_for('static', filename='/favicon/favicon.ico') }}">
+    <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</head>
+<body>
+    {{ navbar | safe }}
+    {{ fehler }}
+<form method="post" action="/install" id="install">
+    <label for="vorname">Vorname:</label><br>
+    <input type="text" id="vorname" name="vorname"><br>
+
+    <label for="nachname">Nachname:</label><br>
+    <input type="text" id="nachname" name="nachname"><br>
+
+    <label for="email">Email:</label><br>
+    <input type="text" id="email" name="email"><br>
+
+    <label for="passwort">Passwort:</label><br>
+    <input type="text" id="passwort" name="passwort"><br>
+
+    <label for="adresse">Adresse:</label><br>
+    <input type="text" id="adresse" name="adresse"><br><br>
+
+    <button type="submit" form="install" id="submit" >Senden</button>
+</form>
+</body>
+</html>
