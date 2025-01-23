@@ -1,10 +1,9 @@
 import csv
-from logging import exception
-
 from flask import Flask, render_template, request, redirect, session, abort
 
 import benutzer as b
 import kaffee as k
+import einkaufswagen as e
 import functions
 import init
 from init import *
@@ -14,8 +13,7 @@ app.secret_key = FLASK_SECRET_KEY
 
 @app.route('/')
 def index():
-    return "index"
-
+    return redirect('/login')
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
@@ -105,6 +103,43 @@ def benutzer_aendern():
             b.update(session.get('id'), vorname, nachname, email, passwort, adresse,str(b.get_by_id(session.get('id'))[4]))
             return render_template('benutzer/benutzer.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), benuter_daten=b.get_by_id(session.get('id')), fehler=fehler)
         return redirect("/benutzer")
+
+@app.route('/einkaufswagen', methods=['GET', 'POST'])
+def einkaufswagen():
+    if session.get('id'):
+        if request.method == 'GET':
+            return render_template('einkaufswagen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=e.get_all_user_id_formated(session.get('id')))
+        elif request.method == 'POST':
+            kaffee_id = request.form.get('id')
+            gramm = request.form.get('gramm')
+            menge = request.form.get('menge')
+
+            if gramm=="0" or gramm == "":
+                abort(404)
+
+            benutzer_ID = session.get('id')
+
+            e.insert(benutzer_ID, kaffee_id, menge, gramm)
+            return "POST"
+        else:
+            abort(404)
+
+@app.route('/einkaufswagen/set', methods=['GET', 'POST'])
+def einkaufswagen_set():
+    if session.get('id'):
+        if request.method == 'POST':
+            kaffee_id = request.form.get('id')
+            gramm = request.form.get('gramm')
+            menge = request.form.get('menge')
+
+            if gramm == "0" or gramm == "":
+                abort(404)
+
+            benutzer_ID = session.get('id')
+
+            e.update(benutzer_ID, kaffee_id, menge, gramm)
+            return "POST"
+    #abort(404)
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
@@ -477,6 +512,11 @@ def fill():
 def delete():
     init.delete()
     return "delete"
+
+@app.route('/admin/einkaufswagen/delete')
+def admin_einkaufswagen_delete():
+    init.delete_einkaufswagen()
+    return redirect("/admin")
 
 @app.route('/admin/kaffee/delete')
 def admin_kaffee_delete():

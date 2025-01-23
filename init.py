@@ -173,6 +173,7 @@ def install():
             print(e)
             print("Could not create Table Bewertung")
 
+
 def fill():
     benutzer.fill()
     kaffee.fill()
@@ -205,6 +206,13 @@ def delete_kaffee():
     except Exception as e:
         print(e)
         print("Could not delete Table Benutzer")
+
+def delete_einkaufswagen():
+    try:
+        dbcursor.execute("DELETE FROM Einkaufswagen")
+    except Exception as e:
+        print(e)
+        print("Could not delete Table Einkaufswagen")
 
 db = init_db()
 dbcursor = db.cursor()

@@ -35,7 +35,7 @@
             <td> {{ row[6] }} </td>
             <td>
                 {% if row[7] %}
-                {{ format(row[7], '.6f')}}€
+                {{ "%.2f"|format(row[7] | float) }}€
                 {% elif row[8] %}
                 {{ "%.2f"|format(row[8] | float * 2) }}
                 {% elif row[9] %}
@@ -47,7 +47,7 @@
                 {% endif %}
             </td>
             <td>
-                <select name="gramm" id="gramm{{row[0]}}">
+                <select name="gramm" id="gramm{{loop.index}}">
                     {% if row[7] %}
                     <option value="1000g"> 1000g {{row[7]}}€</option>
                     {% endif %}
@@ -63,9 +63,9 @@
                 </select>
             </td>
             <td>
-                <input min="0" value="1" type="number" name="menge" id="menge{{row[0]}}">
+                <input min="0" value="1" type="number" name="menge" id="menge{{loop.index}}">
             </td>
-            <td> <button>Add</button> </td>
+            <td> <input type="text" hidden="hidden" id="kaffee{{loop.index}}" value="{{row[0]}}"> <button value="{{row[0]}}" id="btn{{loop.index}}" type="submit" >Add</button> </td>
         </tr>
         {%endfor%}
     </table>

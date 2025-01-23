@@ -1,6 +1,8 @@
 import functions
 import init
 
+
+
 def get_all():
     init.dbcursor.execute("SELECT * FROM Kaffee")
     result = init.dbcursor.fetchall()
@@ -17,6 +19,11 @@ def insert(hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil,
     preis_500g = functions.sql_escape(preis_500g)
     preis_250g = functions.sql_escape(preis_250g)
     preis_100g = functions.sql_escape(preis_100g)
+
+    preis_1000g = functions.geld_replace(preis_1000g)
+    preis_500g = functions.geld_replace(preis_500g)
+    preis_250g = functions.geld_replace(preis_250g)
+    preis_100g = functions.geld_replace(preis_100g)
 
     hersteller = "'" + hersteller + "'"
     name = "'" + name + "'"
@@ -41,9 +48,9 @@ def insert(hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil,
     print("Kaffee inserted successfully")
 
 def get_by_id(id):
-    init.dbcursor.execute("SELECT Hersteller, Name, Herkunft, Anbauart, Besonderheit, Geschmacksprofil, Preis_1000g, Preis_500g, Preis_250g, Preis_100g FROM Kaffee WHERE Kaffee_ID = " + id)
+    init.dbcursor.execute("SELECT Kaffee_ID, Hersteller, Name, Herkunft, Anbauart, Besonderheit, Geschmacksprofil, Preis_1000g, Preis_500g, Preis_250g, Preis_100g FROM Kaffee WHERE Kaffee_ID = " + id)
     result = init.dbcursor.fetchall()
-
+    print(result)
     return result[0]
 
 def update(id, hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil, preis_1000g, preis_500g, preis_250g, preis_100g):
@@ -52,27 +59,40 @@ def update(id, hersteller, name, herkunft, anbauart, besonderheit, geschmackspro
     hersteller = functions.sql_escape(hersteller)
     hersteller = "'" + hersteller + "', "
     sql = sql + "Hersteller = " + hersteller
+
     herkunft = functions.sql_escape(herkunft)
     herkunft = "'" + herkunft + "', "
     sql = sql + "Herkunft = " + herkunft
+
     anbauart = functions.sql_escape(anbauart)
     anbauart = "'" + anbauart + "', "
     sql = sql + "Anbauart = " + anbauart
+
     besonderheit = functions.sql_escape(besonderheit)
     besonderheit = "'" + besonderheit + "', "
     sql = sql + "Besonderheit = " + besonderheit
+
     geschmacksprofil = functions.sql_escape(geschmacksprofil)
     geschmacksprofil = "'" + geschmacksprofil + "', "
     sql = sql + "Geschmacksprofil = " + geschmacksprofil
+
+
+    preis_1000g = functions.geld_replace(preis_1000g)
     preis_1000g = functions.sql_escape(preis_1000g)
     preis_1000g = "'" + preis_1000g + "', "
     sql = sql + "Preis_1000g = " + preis_1000g
+
+    preis_500g = functions.geld_replace(preis_500g)
     preis_500g = functions.sql_escape(preis_500g)
     preis_500g = "'" + preis_500g + "', "
     sql = sql + "Preis_500g = " + preis_500g
+
+    preis_250g = functions.geld_replace(preis_250g)
     preis_250g = functions.sql_escape(preis_250g)
     preis_250g = "'" + preis_250g + "', "
     sql = sql + "Preis_250g = " + preis_250g
+
+    preis_100g = functions.geld_replace(preis_100g)
     preis_100g = functions.sql_escape(preis_100g)
     preis_100g = "'" + preis_100g + "', "
     sql = sql + "Preis_100g = " + preis_100g
@@ -129,6 +149,7 @@ def fill():
         anbauart = "'" + anbauart + "'"
         besonderheit = "'" + besonderheit + "'"
         geschmacksprofil = "'" + geschmacksprofil + "'"
+
         preis_1000g = "'" + preis_1000g + "'"
         preis_500g = "'" + preis_500g + "'"
         preis_250g = "'" + preis_250g + "'"

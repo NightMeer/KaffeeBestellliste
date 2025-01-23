@@ -2,6 +2,7 @@ import string
 import random
 import init
 import hashlib
+import re
 from flask import session, abort
 
 
@@ -76,7 +77,7 @@ def generate_navbar():
         )
 
     navbar = navbar + (
-        "| <a href=\"/warenkorb\"> Warenkorb </a> |"
+        "| <a href=\"/einkaufswagen\"> Einkaufswagen </a> |"
         "| <a href=\"/logout\"> Logout </a> |"
         "</div> <br>"
     )
@@ -85,3 +86,7 @@ def generate_navbar():
 
 def sql_escape(string):
     return string.replace("'", "''")
+
+def geld_replace(string):
+    string = re.sub('[^\d\.]', '', string)
+    return string
