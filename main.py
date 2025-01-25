@@ -1,8 +1,9 @@
-import csv
 from flask import Flask, render_template, request, redirect, session, abort
+from datetime import datetime
 
 import benutzer as b
 import kaffee as k
+import kaffeetemp as kt
 import einkaufswagen as e
 import functions
 import init
@@ -10,6 +11,8 @@ from init import *
 
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET_KEY
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 
 @app.route('/')
 def index():
@@ -534,8 +537,6 @@ def admin_kaffee_import_txt():
         for row in data:
             row = row.split(";")
 
-            print(row)
-
             hersteller = row[0] or ""
             name = row[1] or ""
             herkunft = row[2] or ""
@@ -553,6 +554,82 @@ def admin_kaffee_import_txt():
     fehler = "importiert"
     return render_template('admin/admin_import.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), fehler=fehler)
 
+@app.route('/admin/kaffee/import/file', methods=['POST', 'GET'])
+def admin_kaffee_import_file():
+    if request.method == 'GET':
+        return render_template('admin/admin_import_file.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar())
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            print('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        if file.filename == '':
+            print('No selected file')
+            return redirect(request.url)
+        if file and functions.allowed_file(file.filename):
+            now = datetime.now()
+            dt_string = now.strftime("%d%m%Y-%H%M%S")
+
+            filename = dt_string + "-" + file.filename
+
+            save = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(save)
+
+            with open(save) as file:
+                for line in file:
+                    data = line.rstrip()
+                    data = data.split(';')
+
+                    hersteller = data[0] or ""
+                    name = data[1] or ""
+                    herkunft = data[2] or ""
+                    anbauart = data[3] or ""
+                    besonderheit = data[4] or ""
+                    geschmacksprofil = data[5] or ""
+                    preis_1000g = data[6] or ""
+                    preis_500g = data[7] or ""
+                    preis_250g = data[8] or ""
+                    preis_100g = data[9] or ""
+
+                    kt.insert(hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil, preis_1000g, preis_500g, preis_250g, preis_100g)
+
+            return render_template('admin/import_file_check.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=kt.get_all(), filename=save)
+
+        return redirect("/admin/kaffee/import/file")
+
+@app.route('/admin/kaffee/import/file/test', methods=['POST', 'GET'])
+def admin_kaffee_import_file_test():
+    if request.method == 'POST':
+
+        try:
+            dbcursor.execute("DELETE FROM Kaffeetemp")
+        except Exception as e:
+            print(e)
+            print("Could not delete Table Benutzer")
+
+        if request.form.get('file'):
+            with open(request.form.get('file')) as file:
+                for line in file:
+                    data = line.rstrip()
+                    data = data.split(';')
+
+                    hersteller = data[0] or ""
+                    name = data[1] or ""
+                    herkunft = data[2] or ""
+                    anbauart = data[3] or ""
+                    besonderheit = data[4] or ""
+                    geschmacksprofil = data[5] or ""
+                    preis_1000g = data[6] or ""
+                    preis_500g = data[7] or ""
+                    preis_250g = data[8] or ""
+                    preis_100g = data[9] or ""
+
+                    k.insert(hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil, preis_1000g, preis_500g, preis_250g, preis_100g)
+
+            return redirect("/admin/kaffee/anzeigen")
+
+        else:
+            return redirect("/admin/kaffee/import/file")
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)

@@ -90,3 +90,7 @@ def sql_escape(string):
 def geld_replace(string):
     string = re.sub('[^\d\.]', '', string)
     return string
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in init.ALLOWED_EXTENSIONS

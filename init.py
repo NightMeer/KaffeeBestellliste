@@ -10,6 +10,9 @@ load_dotenv()
 HTML_LANG = os.environ.get("HTML_LANG", "de")
 HTML_TITLE = os.environ.get("HTML_TITLE", "KaffeeBestellliste")
 FLASK_SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", "SECRET_KEY")
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+
 
 def init_db():
     if os.environ.get("DATABASE_TYPE") == 'mysql':
@@ -79,6 +82,27 @@ def install():
 
         try:
             dbcursor.execute(
+                "CREATE TABLE Kaffeetemp ("
+                "Kaffeetemp_ID  INT NOT NULL AUTO_INCREMENT, "
+                "Hersteller VARCHAR(255) NOT NULL, "
+                "Name VARCHAR(255) NOT NULL, "
+                "Herkunft VARCHAR(255) NOT NULL, "
+                "Anbauart VARCHAR(255) NOT NULL, "
+                "Besonderheit VARCHAR(255) NOT NULL, "
+                "Geschmacksprofil VARCHAR(255) NOT NULL, "
+                "Preis_1000g VARCHAR(255) NOT NULL, "
+                "Preis_500g VARCHAR(255) NOT NULL, "
+                "Preis_250g VARCHAR(255) NOT NULL, "
+                "Preis_100g VARCHAR(255) NOT NULL, "
+                "PRIMARY KEY (Kaffee_ID)"
+                ")"
+            )
+        except Exception as e:
+            print(e)
+            print("Could not create Table Einkaufswagen")
+
+        try:
+            dbcursor.execute(
                 "CREATE TABLE Einkaufswagen ("
                 "Einkaufswagen_ID  INT NOT NULL AUTO_INCREMENT, "
                 "Benutzer_ID VARCHAR(255) NOT NULL, "
@@ -129,6 +153,26 @@ def install():
             dbcursor.execute(
                 "CREATE TABLE Kaffee ("
                 "Kaffee_ID integer primary key autoincrement, "
+                "Hersteller VARCHAR(255) NOT NULL, "
+                "Name VARCHAR(255) NOT NULL, "
+                "Herkunft VARCHAR(255) NOT NULL, "
+                "Anbauart VARCHAR(255) NOT NULL, "
+                "Besonderheit VARCHAR(255) NOT NULL, "
+                "Geschmacksprofil VARCHAR(255) NOT NULL, "
+                "Preis_1000g VARCHAR(255) NOT NULL, "
+                "Preis_500g VARCHAR(255) NOT NULL, "
+                "Preis_250g VARCHAR(255) NOT NULL, "
+                "Preis_100g VARCHAR(255) NOT NULL"
+                ")"
+            )
+        except Exception as e:
+            print(e)
+            print("Could not create Table Kaffee")
+
+        try:
+            dbcursor.execute(
+                "CREATE TABLE Kaffeetemp ("
+                "Kaffeetemp_ID integer primary key autoincrement, "
                 "Hersteller VARCHAR(255) NOT NULL, "
                 "Name VARCHAR(255) NOT NULL, "
                 "Herkunft VARCHAR(255) NOT NULL, "
