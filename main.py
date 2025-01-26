@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, redirect, session, abort
 from datetime import datetime
 
-import benutzer as b
-import kaffee as k
-import kaffeetemp as kt
-import einkaufswagen as e
+import controller.benutzer
+import controller.kaffee
+import controller.einkaufswagen
+import controller.kaffeetemp
 import functions
 import init
 from init import *
@@ -13,518 +13,173 @@ app = Flask(__name__)
 app.secret_key = FLASK_SECRET_KEY
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-
 @app.route('/')
 def index():
     return redirect('/login')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'GET':
-        if session.get('id'):
-            return redirect("/home")
-        return render_template('login.html', html_lang=HTML_LANG, html_title=HTML_TITLE)
-    elif request.method == 'POST':
-        if session.get('id'):
-            return redirect("/home")
-
-        fehler = "Folgendes fehlt: "
-        error = 0
-
-        if request.form.get('email'):
-            email = request.form['email']
+    if not session.get('id'):
+        if request.method == 'GET':
+            return render_template("login.html", html_lang=HTML_LANG, html_title=HTML_TITLE)
         else:
-            fehler = fehler + "email "
-            error = 1
-
-        if request.form.get('passwort'):
-            passwort = request.form['passwort']
-        else:
-            fehler = fehler + "passwort "
-            error = 1
-
-        if error == 0:
-            if functions.get_login(email, passwort):
-                return redirect("/home")
-            else:
-                fehler = "E-Mail oder Passwort Falsch"
-                return render_template('login.html', html_lang=HTML_LANG, html_title=HTML_TITLE, fehler=fehler)
-        else:
-            return render_template('login.html', html_lang=HTML_LANG, html_title=HTML_TITLE, fehler=fehler)
-
-    else:
-        return abort(404)
+            if not functions.get_login(request.form.get('email'), request.form.get('passwort')):
+                return render_template('login.html', html_lang=HTML_LANG, html_title=HTML_TITLE)
+    return redirect("/home")
 
 @app.route('/logout')
 def logout():
     session.pop('id')
-    fehler = "Ausgeloggt"
-    return render_template('login.html', html_lang=HTML_LANG, html_title=HTML_TITLE, fehler=fehler)
+    session.pop('email')
+    session.pop('hash')
+    return render_template('login.html', html_lang=HTML_LANG, html_title=HTML_TITLE)
 
 @app.route('/home', methods=['GET', 'POST'])
 def home():
-    if request.method == 'GET':
-        if session.get('id'):
-            return render_template('home.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=k.get_all())
+    if session.get('id'):
+        if request.method == 'GET':
+            return render_template('home.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=controller.kaffee.get_all())
         else:
-            return redirect("/login")
-    elif request.method == 'POST':
-        return redirect("/login")
+            controller.einkaufswagen.insert(kaffeeid=request.form.get('kaffeeid'), benutzerid=session.get('id'), gramm=request.form.get('gramm'), menge=request.form.get('menge'))
+            return "1"
+    return redirect("/login")
+
+@app.route('/benutzer', methods=['GET'])
+def benutzer():
+    if session.get('id'):
+        return render_template('benutzer/benutzer.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), benuter_daten=controller.benutzer.get_by_id(session.get('id')))
     else:
         return redirect("/login")
 
-@app.route('/benutzer', methods=['GET', 'POST'])
-def benutzer():
-    if session.get('id'):
-        if request.method == 'GET':
-            return render_template('benutzer/benutzer.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), benuter_daten=b.get_by_id(session.get('id')))
-
-@app.route('/benutzer/aendern', methods=['GET', 'POST'])
+# Benutzer aendern
+@app.route('/benutzer/aendern', methods=['POST'])
 def benutzer_aendern():
     if session.get('id'):
-        if request.method == 'POST':
-            fehler = ""
-            vorname = ""
-            nachname = ""
-            email = ""
-            adresse = ""
-            passwort = ""
+        passwort = functions.check_passwort(request.form.get('passwort'), request.form.get('passwort2'))
+        if passwort:
+            controller.benutzer.update(id=session.get('id'), passwort=passwort)
 
-            if request.form.get('vorname'):
-                vorname = request.form['vorname']
-            if request.form.get('nachname'):
-                nachname = request.form['nachname']
-            if request.form.get('email'):
-                email = request.form['email']
-            if request.form.get('adresse'):
-                adresse = request.form['adresse']
-            if request.form.get('passwort') and request.form.get('passwort2'):
-                if request.form.get('passwort') == request.form.get('passwort2'):
-                    passwort = functions.get_hash(request.form.get('passwort'))
-                else:
-                    fehler = "Passwort nicht gleich"
+        controller.benutzer.update(id=session.get('id'), vorname=request.form.get('vorname'), nachname=request.form.get('nachname'), email=request.form.get('email'), adresse=request.form.get('adresse'))
 
-            b.update(session.get('id'), vorname, nachname, email, passwort, adresse,str(b.get_by_id(session.get('id'))[4]))
-            return render_template('benutzer/benutzer.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), benuter_daten=b.get_by_id(session.get('id')), fehler=fehler)
-        return redirect("/benutzer")
+        return render_template('benutzer/benutzer.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), benuter_daten=controller.benutzer.get_by_id(session.get('id')))
+
+    return redirect("/login")
 
 @app.route('/einkaufswagen', methods=['GET', 'POST'])
 def einkaufswagen():
     if session.get('id'):
         if request.method == 'GET':
-            return render_template('einkaufswagen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=e.get_all_user_id_formated(session.get('id')))
-        elif request.method == 'POST':
-            kaffee_id = request.form.get('id')
-            gramm = request.form.get('gramm')
-            menge = request.form.get('menge')
-
-            if gramm=="0" or gramm == "":
-                abort(404)
-
-            benutzer_ID = session.get('id')
-
-            e.insert(benutzer_ID, kaffee_id, menge, gramm)
-            return "POST"
+            return render_template('einkaufswagen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=controller.einkaufswagen.get_data_formated(session.get('id')))
         else:
-            abort(404)
+            controller.einkaufswagen.update(kaffeeid=request.form.get('kaffeeid'), benutzerid=session.get('id'), gramm=request.form.get('gramm'), menge=request.form.get('menge'))
+            return "1"
+    return redirect("/login")
 
-@app.route('/einkaufswagen/set', methods=['GET', 'POST'])
-def einkaufswagen_set():
-    if session.get('id'):
-        if request.method == 'POST':
-            kaffee_id = request.form.get('id')
-            gramm = request.form.get('gramm')
-            menge = request.form.get('menge')
-
-            if gramm == "0" or gramm == "":
-                abort(404)
-
-            benutzer_ID = session.get('id')
-
-            e.update(benutzer_ID, kaffee_id, menge, gramm)
-            return "POST"
-    #abort(404)
-
-@app.route('/admin', methods=['GET', 'POST'])
+# Admin
+@app.route('/admin', methods=['GET'])
 def admin():
     if session.get('id'):
-        if request.method == 'GET':
             return render_template('admin/admin.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar())
 
-@app.route('/admin/delete')
-def admin_delete():
-    init.delete()
-    return redirect("/install")
-@app.route('/admin/fill')
-def admin_fill():
-    init.fill()
-    return redirect("/admin")
-@app.route('/admin/benutzer/fill')
-def admin_benutzer_fill():
-    b.fill()
-    return redirect("/admin")
-@app.route('/admin/kaffee/fill')
-def admin_kaffee_fill():
-    k.fill()
-    return redirect("/admin")
-
+# Benutzer hinzufügen
 @app.route('/admin/benutzer/hinzufuegen', methods=['GET', 'POST'])
 def admin_benutzer_hinzufuegen():
-    if session.get('id'):
-        if functions.check_if_admin():
-            if request.method == 'GET':
-                    return render_template('admin/benutzer_hinzufuegen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar())
-            if request.method == 'POST':
-                fehler = "Folgendes fehlt: "
-                error = 0
+    if functions.check_if_admin():
+        if request.method == 'GET':
+                return render_template('admin/benutzer_hinzufuegen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar())
+        if request.method == 'POST':
+            passwort = functions.check_passwort(request.form.get('passwort'), request.form.get('passwort2'))
 
-                if request.form.get('vorname'):
-                    vorname = request.form['vorname']
-                else:
-                    fehler = fehler + "vorname "
-                    error = 1
-                if request.form.get('nachname'):
-                    nachname = request.form['nachname']
-                else:
-                    fehler = fehler + "nachname "
-                    error = 1
-                if request.form.get('email'):
-                    email = request.form['email']
-                else:
-                    fehler = fehler + "email "
-                    error = 1
-                if request.form.get('adresse'):
-                    adresse = request.form['adresse']
-                else:
-                    fehler = fehler + "adresse "
-                    error = 1
-                if request.form.get('admin'):
-                    admin = request.form['admin']
-                else:
-                    fehler = fehler + "admin "
-                    error = 1
+            if passwort:
+                controller.benutzer.insert(vorname=request.form.get('vorname'), nachname=request.form.get('nachname'), email=request.form.get('email'), passwort=passwort, adresse=request.form.get('adresse'), admin=request.form.get('admin'))
+            else:
+                return render_template('admin/benutzer_hinzufuegen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar())
+            return redirect('/admin/benutzer/anzeigen')
+    else:
+        return redirect('/login')
 
-                if request.form.get('passwort') and request.form.get('passwort2'):
-                    if request.form.get('passwort') == request.form.get('passwort2'):
-                        passwort = functions.get_hash(request.form.get('passwort'))
-                    else:
-                        fehler = "Passwort nicht gleich"
-                else:
-                    fehler = fehler + "passwort "
-                    error = 1
-
-                if error:
-                    return render_template('admin/benutzer_hinzufuegen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), fehler=fehler)
-                else:
-                    b.insert(vorname, nachname, email, passwort, adresse, admin)
-                    fehler = "Benutzer hinzugefügt"
-                    return render_template('admin/benutzer_hinzufuegen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), fehler=fehler)
-
-@app.route('/admin/benutzer/anzeigen', methods=['GET', 'POST'])
+@app.route('/admin/benutzer/anzeigen', methods=['GET'])
 def admin_benutzer_anzeigen():
-    if session.get('id'):
-        if functions.check_if_admin():
-            if request.method == 'GET':
-                return render_template('admin/benutzer_anzeigen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=b.get_all())
+    if functions.check_if_admin():
+        return render_template('admin/benutzer_anzeigen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=controller.benutzer.get_all())
+    else:
+        return redirect('/login')
 
 @app.route('/admin/benutzer/aendern/<id>', methods=['GET', 'POST'])
 def admin_benutzer_aendern(id):
     if functions.check_if_admin():
         if request.method == 'GET':
-            return render_template('admin/benutzer_aendern.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=b.get_by_id(id), id=id)
+            return render_template('admin/benutzer_aendern.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), benuter_daten=controller.benutzer.get_by_id(id), id=id)
         if request.method == 'POST':
-            error = 0
-            fehler = ""
-            vorname = ""
-            nachname = ""
-            email = ""
-            adresse = ""
-            passwort = ""
-            admin = ""
-            if request.form.get('vorname'):
-                vorname = request.form['vorname']
-            if request.form.get('nachname'):
-                nachname = request.form['nachname']
-            if request.form.get('email'):
-                email = request.form['email']
-            if not email:
-                error = 1
-                fehler = "E-Mail Fehlt"
-            if request.form.get('adresse'):
-                adresse = request.form['adresse']
-            if request.form.get('admin'):
-                admin = request.form['admin']
-            if request.form.get('passwort') and request.form.get('passwort2'):
-                if request.form.get('passwort') == request.form.get('passwort2'):
-                    passwort = functions.get_hash(request.form.get('passwort'))
-                else:
-                    fehler = "Passwort nicht gleich"
+            passwort = functions.check_passwort(request.form.get('passwort'), request.form.get('passwort2'))
+            if passwort:
+                controller.benutzer.update(id=id, passwort=passwort)
 
+            controller.benutzer.update(id=id, vorname=request.form.get('vorname'), nachname=request.form.get('nachname'), email=request.form.get('email'), adresse=request.form.get('adresse'))
 
-            if error:
-                return render_template('admin/benutzer_aendern.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=b.get_by_id(id), id=id, fehler=fehler)
-            else:
-                b.update(id, vorname, nachname, email, passwort, adresse, admin, )
+            return render_template('admin/benutzer_aendern.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), id=id, benuter_daten=controller.benutzer.get_by_id(id))
+    else:
+        return redirect('/login')
 
-                return redirect("/admin/benutzer/anzeigen")
-
-@app.route('/admin/benutzer/loeschen/<id>', methods=['GET', 'POST'])
+# Benutzuer löschen
+@app.route('/admin/benutzer/loeschen/<id>', methods=['POST'])
 def admin_benutzer_loeschen(id):
-    b.loeschen(id)
-    return redirect('/admin/benutzer/anzeigen')
+    if functions.check_if_admin():
+        controller.benutzer.delete_by_id(id)
+        return redirect('/admin/benutzer/anzeigen')
+    else:
+        return redirect('/login')
+
 @app.route('/admin/kaffee/hinzufuegen', methods=['GET', 'POST'])
 def admin_kaffee_hinzufuegen():
-    if session.get('id'):
-        if functions.check_if_admin():
-            if request.method == 'GET':
-                return render_template('admin/kaffee_hinzufuegen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar())
-            if request.method == 'POST':
-                fehler = "Folgendes fehlt: "
-                error = 0
-                leer = 0
+    if functions.check_if_admin():
+        if request.method == 'GET':
+            return render_template('admin/kaffee_hinzufuegen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar())
+        if request.method == 'POST':
 
-                hersteller = ""
-                herkunft = ""
-                name=""
-                anbauart = ""
-                besonderheit = ""
-                geschmacksprofil = ""
-                preis_1000g = ""
-                preis_500g = ""
-                preis_250g = ""
-                preis_100g = ""
+            controller.kaffee.insert(hersteller=request.form.get('hersteller'), name=request.form.get('name'), herkunft=request.form.get('herkunft'), anbauart=request.form.get('anbauart'), besonderheit=request.form.get('besonderheit'), geschmacksprofil=request.form.get('geschmacksprofil'), preis_1000g=request.form.get('preis_1000g'), preis_500g=request.form.get('preis_500g'), preis_250g=request.form.get('preis_250g'), preis_100g=request.form.get('preis_100g'))
+            return render_template('admin/kaffee_hinzufuegen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar())
+    else:
+        return redirect('/login')
 
-                if request.form.get('hersteller'):
-                    hersteller = request.form['hersteller']
-                else:
-                    fehler = fehler + "hersteller "
-                    error = 1
-
-                if request.form.get('name'):
-                    name = request.form['name']
-                else:
-                    fehler = fehler + "name "
-                    error = 1
-
-                if request.form.get('herkunft'):
-                    herkunft = request.form['herkunft']
-
-                if request.form.get('anbauart'):
-                    anbauart = request.form['anbauart']
-
-                if request.form.get('besonderheit'):
-                    besonderheit = request.form['besonderheit']
-
-                if request.form.get('geschmacksprofil'):
-                    geschmacksprofil = request.form['geschmacksprofil']
-
-
-                if request.form.get('preis_1000g'):
-                    preis_1000g = request.form['preis_1000g']
-                    preis_1000g.replace(" ", "")
-                if not preis_1000g:
-                    leer = leer + 1
-
-                if request.form.get('preis_500g'):
-                    preis_500g = request.form['preis_500g']
-                    preis_500g.replace(" ", "")
-                if not preis_500g:
-                    leer = leer + 1
-
-                if request.form.get('preis_250g'):
-                    preis_250g = request.form['preis_250g']
-                    preis_250g.replace(" ", "")
-                if not preis_250g:
-                    leer = leer + 1
-
-                if request.form.get('preis_100g'):
-                    preis_100g = request.form['preis_100g']
-                    preis_100g.replace(" ", "")
-                if not preis_100g:
-                    leer = leer + 1
-
-                if leer == 4:
-                    error = 1
-                    fehler = "Preis Leer"
-
-                if error:
-                    return render_template('admin/kaffee_hinzufuegen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), fehler=fehler)
-                else:
-                    k.insert(hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil, preis_1000g, preis_500g, preis_250g, preis_100g)
-                    fehler = "Kaffee hinzugefügt"
-                    return render_template('admin/kaffee_hinzufuegen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), fehler=fehler)
-
-@app.route('/admin/kaffee/anzeigen', methods=['GET', 'POST'])
+# Kaffee Anzeigen
+@app.route('/admin/kaffee/anzeigen', methods=['GET'])
 def admin_kaffee_anzeigen():
-    if session.get('id'):
-        if functions.check_if_admin():
-            if request.method == 'GET':
-                return render_template('admin/kaffee_anzeigen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=k.get_all())
+    if functions.check_if_admin():
+        return render_template('admin/kaffee_anzeigen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=controller.kaffee.get_all())
+    else:
+        return redirect('/login')
 
+# Kaffee Ändern
 @app.route('/admin/kaffee/aendern/<id>', methods=['GET', 'POST'])
 def admin_kaffee_aendern(id):
     if functions.check_if_admin():
         if request.method == 'GET':
-            return render_template('admin/kaffee_aendern.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=k.get_by_id(id),id=id)
+            return render_template('admin/kaffee_aendern.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=controller.kaffee.get_by_id(id),id=id)
         if request.method == 'POST':
-            fehler = "Folgendes fehlt: "
-            error = 0
-            leer = 0
+            controller.kaffee.update(id=id, hersteller=request.form.get('hersteller'), name=request.form.get('name'), herkunft=request.form.get('herkunft'), anbauart=request.form.get('anbauart'), besonderheit=request.form.get('besonderheit'), geschmacksprofil=request.form.get('geschmacksprofil'), preis_1000g=request.form.get('preis_1000g'), preis_500g=request.form.get('preis_500g'), preis_250g=request.form.get('preis_250g'), preis_100g=request.form.get('preis_100g'))
+            return redirect('/admin/kaffee/anzeigen')
+    else:
+        return redirect('/login')
 
-            hersteller = ""
-            herkunft = ""
-            name = ""
-            anbauart = ""
-            besonderheit = ""
-            geschmacksprofil = ""
-            preis_1000g = ""
-            preis_500g = ""
-            preis_250g = ""
-            preis_100g = ""
-
-            if request.form.get('hersteller'):
-                hersteller = request.form['hersteller']
-            else:
-                fehler = fehler + "hersteller "
-                error = 1
-
-            if request.form.get('name'):
-                name = request.form['name']
-            else:
-                fehler = fehler + "name "
-                error = 1
-
-            if request.form.get('herkunft'):
-                herkunft = request.form['herkunft']
-
-            if request.form.get('anbauart'):
-                anbauart = request.form['anbauart']
-
-            if request.form.get('besonderheit'):
-                besonderheit = request.form['besonderheit']
-
-            if request.form.get('geschmacksprofil'):
-                geschmacksprofil = request.form['geschmacksprofil']
-
-            if request.form.get('preis_1000g'):
-                preis_1000g = request.form['preis_1000g']
-                preis_1000g.replace(" ", "")
-                preis_1000g.replace(",", ".")
-            if not preis_1000g:
-                leer = leer + 1
-                preis_1000g = ""
-
-            if request.form.get('preis_500g'):
-                preis_500g = request.form['preis_500g']
-                preis_500g.replace(" ", "")
-                preis_500g.replace(",", ".")
-            if not preis_500g:
-                leer = leer + 1
-                preis_500g = ""
-
-            if request.form.get('preis_250g'):
-                preis_250g = request.form['preis_250g']
-                preis_250g.replace(" ", "")
-                preis_250g.replace(",", ".")
-            if not preis_250g:
-                leer = leer + 1
-                preis_250g = ""
-
-            if request.form.get('preis_100g'):
-                preis_100g = request.form['preis_100g']
-                preis_100g.replace(" ", "")
-                preis_100g.replace(",", ".")
-            if not preis_100g:
-                leer = leer + 1
-                preis_100g = ""
-
-            if leer == 4:
-                error = 1
-                fehler = "Preis Leer"
-
-            if error:
-                return render_template('admin/kaffee_aendern.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=k.get_by_id(id),id=id, fehler=fehler)
-            else:
-                k.update(id, hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil, preis_1000g, preis_500g, preis_250g, preis_100g)
-                fehler = "Kaffee hinzugefügt"
-                return redirect('/admin/kaffee/anzeigen')
-
+# Kaffee Löschen
 @app.route('/admin/kaffee/loeschen/<id>', methods=['GET', 'POST'])
 def admin_kaffee_loeschen(id):
-    k.loeschen(id)
+    controller.kaffee.loeschen(id)
     return redirect('/admin/kaffee/anzeigen')
 
+# Install
 @app.route('/install', methods=['POST', 'GET'])
 def install():
     if request.method == 'GET':
-        try:
-            init.dbcursor.execute("SELECT * FROM Benutzer")
+        if controller.benutzer.dbexist():
             return redirect("/login")
-        except Exception as e:
+        else:
             return render_template('admin/install.html', html_lang=HTML_LANG, html_title=HTML_TITLE)
-    elif request.method == 'POST':
-        fehler = "Folgendes fehlt: "
-        error = 0
-
-        if request.form.get('vorname'):
-            vorname = request.form['vorname']
-        else:
-            fehler = fehler + "vorname "
-            error = 1
-
-        if request.form.get('nachname'):
-            nachname = request.form['nachname']
-        else:
-            fehler = fehler + "nachname "
-            error = 1
-
-        if request.form.get('email'):
-            email = request.form['email']
-        else:
-            fehler = fehler + "email "
-            error = 1
-
-        if request.form.get('passwort'):
-            passwort = request.form['passwort']
-        else:
-            fehler = fehler + "passwort "
-            error = 1
-
-        if request.form.get('adresse'):
-            adresse = request.form['adresse']
-        else:
-            fehler = fehler + "adresse "
-            error = 1
-
-        admin = "1"
-
-        if error == 0:
-            init.install()
-            b.insert(vorname, nachname, email, passwort, adresse, admin)
-            return redirect("/login")
-        else:
-            return render_template('admin/install.html', html_lang=HTML_LANG, html_title=HTML_TITLE, fehler=fehler)
     else:
-        return abort(404)
-
-@app.route('/fill')
-def fill():
-    init.fill()
-    return "fill"
-
-@app.route('/delete')
-def delete():
-    init.delete()
-    return "delete"
-
-@app.route('/admin/einkaufswagen/delete')
-def admin_einkaufswagen_delete():
-    init.delete_einkaufswagen()
-    return redirect("/admin")
-
-@app.route('/admin/kaffee/delete')
-def admin_kaffee_delete():
-    init.delete_kaffee()
-    return redirect('/admin/kaffee/anzeigen')
+        init.install()
+        controller.benutzer.insert(vorname=request.form.get('vorname'), nachname=request.form.get('nachname'), email=request.form.get('email'), passwort=request.form.get('passwort'), adresse=request.form.get('adresse'), admin="1")
+        return redirect("/login")
 
 @app.route('/admin/kaffee/import/txt', methods=['POST', 'GET'])
 def admin_kaffee_import_txt():
@@ -548,7 +203,7 @@ def admin_kaffee_import_txt():
             preis_250g = row[8] or ""
             preis_100g = row[9] or ""
 
-            k.insert(hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil, preis_1000g, preis_500g, preis_250g, preis_100g)
+            controller.kaffee.insert(hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil, preis_1000g, preis_500g, preis_250g, preis_100g)
     except Exception as e:
         print(e)
     fehler = "importiert"
@@ -560,11 +215,9 @@ def admin_kaffee_import_file():
         return render_template('admin/admin_import_file.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar())
     if request.method == 'POST':
         if 'file' not in request.files:
-            print('No file part')
             return redirect(request.url)
         file = request.files['file']
         if file.filename == '':
-            print('No selected file')
             return redirect(request.url)
         if file and functions.allowed_file(file.filename):
             now = datetime.now()
@@ -591,16 +244,15 @@ def admin_kaffee_import_file():
                     preis_250g = data[8] or ""
                     preis_100g = data[9] or ""
 
-                    kt.insert(hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil, preis_1000g, preis_500g, preis_250g, preis_100g)
+                    controller.kaffeetemp.insert(hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil, preis_1000g, preis_500g, preis_250g, preis_100g)
 
-            return render_template('admin/import_file_check.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=kt.get_all(), filename=save)
+            return render_template('admin/import_file_check.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=controller.kaffeetemp.get_all(), filename=save)
 
         return redirect("/admin/kaffee/import/file")
 
 @app.route('/admin/kaffee/import/file/test', methods=['POST', 'GET'])
 def admin_kaffee_import_file_test():
     if request.method == 'POST':
-
         try:
             dbcursor.execute("DELETE FROM Kaffeetemp")
         except Exception as e:
@@ -624,12 +276,47 @@ def admin_kaffee_import_file_test():
                     preis_250g = data[8] or ""
                     preis_100g = data[9] or ""
 
-                    k.insert(hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil, preis_1000g, preis_500g, preis_250g, preis_100g)
+                    controller.kaffee.insert(hersteller, name, herkunft, anbauart, besonderheit, geschmacksprofil, preis_1000g, preis_500g, preis_250g, preis_100g)
 
             return redirect("/admin/kaffee/anzeigen")
 
         else:
             return redirect("/admin/kaffee/import/file")
 
+# Prod Löschen:
+@app.route('/fill')
+def fill():
+    init.fill()
+    return "fill"
+@app.route('/delete')
+def delete():
+    init.delete()
+    return "delete"
+@app.route('/admin/delete')
+def admin_delete():
+    init.delete()
+    return redirect("/install")
+@app.route('/admin/fill')
+def admin_fill():
+    init.fill()
+    return redirect("/admin")
+@app.route('/admin/benutzer/fill')
+def admin_benutzer_fill():
+    controller.benutzerfill()
+    return redirect("/admin")
+@app.route('/admin/kaffee/fill')
+def admin_kaffee_fill():
+    controller.kaffee.fill()
+    return redirect("/admin")
+@app.route('/admin/einkaufswagen/delete')
+def admin_einkaufswagen_delete():
+    init.delete_einkaufswagen()
+    return redirect("/admin")
+@app.route('/admin/kaffee/delete')
+def admin_kaffee_delete():
+    init.delete_kaffee()
+    return redirect('/admin/kaffee/anzeigen')
+
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
+

@@ -5,6 +5,7 @@ import hashlib
 import re
 from flask import session, abort
 
+import controller.benutzer
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -34,30 +35,30 @@ def get_login(email, passwort):
     email = sql_escape(email)
     passwort = sql_escape(passwort)
 
-    email = "'" + email + "'"
-    init.dbcursor.execute("SELECT * FROM Benutzer WHERE email = " + email)
-    result = init.dbcursor.fetchall()
+    result = controller.benutzer.get_by_email(email)
 
-    print(result)
-
-    if check_hash(passwort, result[0][4]):
-        session['id'] = str(result[0][0])
-        session['email'] = str(result[0][3])
-        session['hash'] = result[0][4]
+    if check_hash(passwort, result[4]):
+        session['id'] = str(result[0])
+        session['email'] = str(result[3])
+        session['hash'] = result[4]
         return 1
     else:
         return 0
 
+def check_passwort(passwort = None, passwort2 = None):
+    if passwort and passwort2:
+        if passwort == passwort2:
+            return get_hash(passwort)
+    return 0
+
 def check_if_admin():
-    id = "'" + session.get('id') + "'"
-    try:
-        init.dbcursor.execute("SELECT * FROM Benutzer WHERE Benutzer_ID=" + id)
-    except Exception as e:
-        print(e)
-        abort(500)
-    result = init.dbcursor.fetchall()
-    if result[0][6] == 1:
-        return 1
+    if session.get('id'):
+        id = "'" + session.get('id') + "'"
+        result = controller.benutzer.get_by_id(id)
+        if result[6] == 1:
+            return 1
+        else:
+            return 0
     else:
         return 0
 
@@ -81,11 +82,15 @@ def generate_navbar():
         "| <a href=\"/logout\"> Logout </a> |"
         "</div> <br>"
     )
-
     return navbar
 
-def sql_escape(string):
+def sql_escape(string = ""):
+    print(string)
     return string.replace("'", "''")
+
+def sql_string(string):
+    string = sql_escape(string)
+    return "'" + string + "'"
 
 def geld_replace(string):
     string = re.sub('[^\d\.]', '', string)

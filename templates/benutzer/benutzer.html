@@ -18,13 +18,13 @@
 
     <form method="post" action="/benutzer/aendern" id="install">
     <label for="vorname">Vorname:</label><br>
-    <input value="{{ benuter_daten[0] }}" type="text" id="vorname" name="vorname"><br>
+    <input value="{{ benuter_daten[1] }}" type="text" id="vorname" name="vorname"><br>
 
     <label for="nachname">Nachname:</label><br>
-    <input value="{{ benuter_daten[1] }}" type="text" id="nachname" name="nachname"><br>
+    <input value="{{ benuter_daten[2] }}" type="text" id="nachname" name="nachname"><br>
 
     <label for="email">Email:</label><br>
-    <input value="{{ benuter_daten[2] }}" type="text" id="email" name="email"><br>
+    <input value="{{ benuter_daten[3] }}" type="text" id="email" name="email"><br>
 
     <label for="passwort">Passwort:</label><br>
     <input value="" type="text" id="passwort" name="passwort"><br>
@@ -33,7 +33,7 @@
     <input value="" type="text" id="passwort2" name="passwort2"><br>
 
     <label for="adresse">Adresse:</label><br>
-    <input value="{{ benuter_daten[3] }}" type="text" id="adresse" name="adresse"><br><br>
+    <input value="{{ benuter_daten[5] }}" type="text" id="adresse" name="adresse"><br><br>
 
     <button type="submit" form="install" id="submit" >Speichern</button>
 </form>

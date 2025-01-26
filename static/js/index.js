@@ -12,14 +12,14 @@ $(document).ready(function () {
         menge = $(menge).val()
         id =  $(id).val()
 
-        var data = { id : id, gramm : gramm, menge : menge }
+        var data = { kaffeeid : id, gramm : gramm, menge : menge }
 
         console.log(window.location.pathname);
 
         if (window.location.pathname == "/home"){
             $.ajax({
               type: "POST",
-              url: "/einkaufswagen",
+              url: "/home",
               data: data,
               success: function(msg){
                     console.log( "Data Saved: " + msg );
@@ -31,7 +31,7 @@ $(document).ready(function () {
         }else{
             $.ajax({
               type: "POST",
-              url: "/einkaufswagen/set",
+              url: "/einkaufswagen",
               data: data,
               success: function(msg){
                   location.reload();
