@@ -5,6 +5,7 @@ import controller.benutzer
 import controller.kaffee
 import controller.einkaufswagen
 import controller.kaffeetemp
+import controller.bestellung
 import functions
 import init
 from init import *
@@ -129,6 +130,11 @@ def admin_benutzer_loeschen(id):
         return redirect('/admin/benutzer/anzeigen')
     else:
         return redirect('/login')
+
+@app.route('/admin/bestellung/anzeigen', methods=['GET'])
+def admin_bestellung_anzeigen():
+    return render_template('einkaufswagen.html', html_lang=HTML_LANG, html_title=HTML_TITLE, navbar=functions.generate_navbar(), result=controller.bestellung.get_all())
+
 
 @app.route('/admin/kaffee/hinzufuegen', methods=['GET', 'POST'])
 def admin_kaffee_hinzufuegen():
